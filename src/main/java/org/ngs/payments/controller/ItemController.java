@@ -32,7 +32,7 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<ItemWithInventoryView>> fetchItems(@RequestParam(required = false) String name,
+    public ResponseEntity<PageResponse<ItemWithInventoryView>> fetchItems(@RequestParam(required = false, defaultValue = "") String name,
                                                                           @RequestParam(defaultValue = "0") @Min(0) int page,
                                                                           @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         log.info("received fetch items request {}", name);

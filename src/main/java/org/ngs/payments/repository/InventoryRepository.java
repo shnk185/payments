@@ -5,6 +5,7 @@ import org.ngs.payments.entity.InventoryEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,4 +21,12 @@ public interface InventoryRepository extends JpaRepository<InventoryEntity, Long
     WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :name, '%'))
     """)
     Page<ItemWithInventoryView> findItemsWithInventory(@Param("name") String name, Pageable pageable);
+
+    InventoryEntity findByItemId(Long itemId);
+
+    @Modifying
+    @Query("UPDATE InventoryEntity set availableQuantity = availableQuantity - :selectedCount, " +
+            "reservedQuantity = reservedQuantity + :selectedCount " +
+            "where itemId = :itemId and availableQuantity >= :selectedCount")
+    int reserveItemQuantity(@Param("itemId") Long itemId, @Param("selectedCount") Integer selectedCount);
 }
