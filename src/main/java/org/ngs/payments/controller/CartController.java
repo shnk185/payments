@@ -47,11 +47,12 @@ public class CartController {
     }
 
     @PostMapping("/{cartId}/checkout")
-    public ResponseEntity<CartCheckoutResponse> checkoutCart(@PathVariable String cartId) {
+    public ResponseEntity<CartCheckoutResponse> checkoutCart(@PathVariable String cartId,
+                                                            @RequestHeader("Idempotency-Key") String idempotencyKey) {
         long userId = SecurityUtils.currentUserId();
-        log.info("received cart checkout request {} {}", cartId, userId);
-        CartCheckoutResponse cartCheckoutResponse = cartService.checkoutCart(cartId, userId);
+        log.info("received cart checkout request {} {} {}", cartId, userId, idempotencyKey);
+        CartCheckoutResponse cartCheckoutResponse = cartService.checkoutCart(cartId, userId, idempotencyKey);
         log.info("cart checkout response {}", cartCheckoutResponse);
-        return ResponseEntity.ok(cartCheckoutResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cartCheckoutResponse);
     }
 }
