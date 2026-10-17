@@ -25,6 +25,7 @@ import org.ngs.payments.repository.InventoryRepository;
 import org.ngs.payments.repository.PaymentOrderItemRepository;
 import org.ngs.payments.repository.PaymentOrderRepository;
 import org.ngs.payments.repository.PaymentRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -114,7 +115,13 @@ public class CartService {
         PaymentEntity payment = PaymentEntity.builder().cartId(cartEntity.getId()).buyerId(userId)
                 .uniqueId(UUID.randomUUID().toString()).amount(amount).currency(currency).status(PaymentStatus.NOT_STARTED)
                 .idempotencyKey(idempotencyKey).expiresAt(Instant.now().plus(PAYMENT_EXPIRY)).build();
-        paymentRepository.save(payment);
+        try {
+            paymentRepository.save(payment);
+        } catch (DataIntegrityViolationException e) {
+            PaymentEntity existing = paymentRepository.findByIdempotencyKey(idempotencyKey).orElseThrow();
+            return CartCheckoutResponse.builder().uniqueId(cartId).paymentUUID(existing.getUniqueId())
+                    .cartCost(existing.getAmount()).build();
+        }
         for (SellerOrderGroup sellerOrder : sellerOrders) {
             PaymentOrderEntity paymentOrder = PaymentOrderEntity.builder().paymentId(payment.getId())
                     .sellerId(sellerOrder.getSellerId()).subtotal(sellerOrder.getSubtotal()).currency(currency)
