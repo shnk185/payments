@@ -7,6 +7,7 @@ import org.ngs.payments.dto.response.CartCheckoutResponse;
 import org.ngs.payments.dto.response.CartWithItemsResponse;
 import org.ngs.payments.dto.response.CreateCartResponse;
 import org.ngs.payments.service.CartService;
+import org.ngs.payments.util.IdempotencyUtil;
 import org.ngs.payments.util.SecurityUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +52,9 @@ public class CartController {
                                                             @RequestHeader("Idempotency-Key") String idempotencyKey) {
         long userId = SecurityUtils.currentUserId();
         log.info("received cart checkout request {} {} {}", cartId, userId, idempotencyKey);
-        CartCheckoutResponse cartCheckoutResponse = cartService.checkoutCart(cartId, userId, idempotencyKey);
+        CartCheckoutResponse cartCheckoutResponse = IdempotencyUtil.executeIdempotentMethod(
+                () -> cartService.checkoutCart(cartId, userId, idempotencyKey),
+                () -> cartService.checkoutCartIdempotentFallback(idempotencyKey, cartId));
         log.info("cart checkout response {}", cartCheckoutResponse);
         return ResponseEntity.status(HttpStatus.CREATED).body(cartCheckoutResponse);
     }

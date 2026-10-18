@@ -2,7 +2,6 @@ package org.ngs.payments.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.ngs.payments.dto.CartItem;
 import org.ngs.payments.dto.SellerOrderGroup;
 import org.ngs.payments.dto.request.CartAddItemRequest;
@@ -25,7 +24,6 @@ import org.ngs.payments.repository.InventoryRepository;
 import org.ngs.payments.repository.PaymentOrderItemRepository;
 import org.ngs.payments.repository.PaymentOrderRepository;
 import org.ngs.payments.repository.PaymentRepository;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -88,13 +86,20 @@ public class CartService {
         return CartWithItemsResponse.builder().cartUniqueId(cartId).cartItems(cartItems).build();
     }
 
-
-    @Transactional
-    public CartCheckoutResponse checkoutCart(String cartId, long userId, String idempotencyKey) {
+    public CartCheckoutResponse checkoutCartIdempotentFallback(String idempotencyKey, String cartId) {
         PaymentEntity existingPayment = paymentRepository.findByIdempotencyKey(idempotencyKey).orElse(null);
         if (existingPayment != null) {
             return CartCheckoutResponse.builder().uniqueId(cartId).paymentUUID(existingPayment.getUniqueId())
                     .cartCost(existingPayment.getAmount()).build();
+        }
+        return null;
+    }
+
+    @Transactional
+    public CartCheckoutResponse checkoutCart(String cartId, long userId, String idempotencyKey) {
+        CartCheckoutResponse existingResponse = checkoutCartIdempotentFallback(idempotencyKey, cartId);
+        if (null != existingResponse) {
+            return existingResponse;
         }
 
         CartEntity cartEntity = cartRepository.findByUniqueIdAndDeletedFalse(cartId)
@@ -115,13 +120,7 @@ public class CartService {
         PaymentEntity payment = PaymentEntity.builder().cartId(cartEntity.getId()).buyerId(userId)
                 .uniqueId(UUID.randomUUID().toString()).amount(amount).currency(currency).status(PaymentStatus.NOT_STARTED)
                 .idempotencyKey(idempotencyKey).expiresAt(Instant.now().plus(PAYMENT_EXPIRY)).build();
-        try {
-            paymentRepository.save(payment);
-        } catch (DataIntegrityViolationException e) {
-            PaymentEntity existing = paymentRepository.findByIdempotencyKey(idempotencyKey).orElseThrow();
-            return CartCheckoutResponse.builder().uniqueId(cartId).paymentUUID(existing.getUniqueId())
-                    .cartCost(existing.getAmount()).build();
-        }
+        paymentRepository.save(payment);
         for (SellerOrderGroup sellerOrder : sellerOrders) {
             PaymentOrderEntity paymentOrder = PaymentOrderEntity.builder().paymentId(payment.getId())
                     .sellerId(sellerOrder.getSellerId()).subtotal(sellerOrder.getSubtotal()).currency(currency)
