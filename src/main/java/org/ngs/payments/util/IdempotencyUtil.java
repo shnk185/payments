@@ -16,7 +16,7 @@ public class IdempotencyUtil {
             if (existing != null) {
                 return existing;
             }
-           throw e;
+            throw e;
         }
     }
 
