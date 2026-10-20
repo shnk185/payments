@@ -47,4 +47,10 @@ public class PaymentEntity extends BaseEntity {
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
+
+    @Column(name = "last_error_code", length = 64)
+    private String lastErrorCode;
+
+    @Column(name = "last_error_message", length = 255)
+    private String lastErrorMessage;
 }
