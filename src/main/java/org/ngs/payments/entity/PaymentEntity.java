@@ -39,6 +39,12 @@ public class PaymentEntity extends BaseEntity {
     @Column(name = "idempotency_key", nullable = false, unique = true)
     private String idempotencyKey;
 
+    @Column(name = "checkout_session_id", unique = true, length = 64)
+    private String checkoutSessionId;
+
+    @Column(name = "checkout_url", length = 512)
+    private String checkoutUrl;
+
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 }
