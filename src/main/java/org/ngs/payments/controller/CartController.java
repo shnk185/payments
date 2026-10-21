@@ -1,5 +1,6 @@
 package org.ngs.payments.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ngs.payments.dto.request.CartAddItemRequest;
@@ -30,7 +31,7 @@ public class CartController {
     }
 
     @PutMapping("/{cartId}/items")
-    public ResponseEntity<Void> addItemToCart(@RequestBody CartAddItemRequest cartAddItem, @PathVariable String cartId) {
+    public ResponseEntity<Void> addItemToCart(@RequestBody @Valid CartAddItemRequest cartAddItem, @PathVariable String cartId) {
         long userId = SecurityUtils.currentUserId();
         log.info("received add item to cart request {} {} {}", cartAddItem, userId, cartId);
         cartService.addItemToCart(cartAddItem, userId, cartId);

@@ -1,5 +1,6 @@
 package org.ngs.payments.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ResponseEntity<ItemCreateResponse> createItems(@RequestBody ItemCreateRequest itemCreateRequest) {
+    public ResponseEntity<ItemCreateResponse> createItems(@RequestBody @Valid ItemCreateRequest itemCreateRequest) {
         log.info("received create item request {}", itemCreateRequest);
         long userId = SecurityUtils.currentUserId();
         ItemCreateResponse itemCreateResponse = itemService.createItem(itemCreateRequest, userId);
